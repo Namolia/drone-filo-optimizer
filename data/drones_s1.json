@@ -1,0 +1,52 @@
+[
+  {
+    "id": 1,
+    "max_weight": 5.0,
+    "battery_capacity": 1500.0,
+    "speed": 20.0,
+    "start_pos": [
+      40.765,
+      29.94
+    ]
+  },
+  {
+    "id": 2,
+    "max_weight": 5.0,
+    "battery_capacity": 1500.0,
+    "speed": 20.0,
+    "start_pos": [
+      40.765,
+      29.94
+    ]
+  },
+  {
+    "id": 3,
+    "max_weight": 5.0,
+    "battery_capacity": 1500.0,
+    "speed": 20.0,
+    "start_pos": [
+      40.765,
+      29.94
+    ]
+  },
+  {
+    "id": 4,
+    "max_weight": 5.0,
+    "battery_capacity": 1500.0,
+    "speed": 20.0,
+    "start_pos": [
+      40.765,
+      29.94
+    ]
+  },
+  {
+    "id": 5,
+    "max_weight": 5.0,
+    "battery_capacity": 1500.0,
+    "speed": 20.0,
+    "start_pos": [
+      40.765,
+      29.94
+    ]
+  }
+]
