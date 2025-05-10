@@ -5,6 +5,10 @@ from models import Drone, Delivery, NoFlyZone
 from csp import check_route
 from graph import build_graph
 
+ENERGY_WEIGHT     = 1.0      # Wh başına ceza
+LATE_PENALTY_MIN  = 50.0     # Dakika başına ceza
+DELIVERY_REWARD   = 1_000.0  # Her başarılı teslimat için ödül
+
 # ---------- GA Optimizer ----------
 class GAOptimizer:
     def __init__(self,
@@ -74,11 +78,67 @@ class GAOptimizer:
                 p1, p2 = self.rand.sample(scored[: self.elite], 2)
                 child = self.crossover(p1[1], p2[1])
                 self.mutate(child)
+                self.repair(child) 
                 pop.append(child)
             if gen % 10 == 0:
                 print(f"Gen {gen:3d}  best={scored[0][0]:,}")
         return scored[0]  # (fitness, chrom)
 
+# ---------- repair ----------
+    def repair(self, chrom):
+        """Her teslimat tam bir kez atanmış mı?  Yineleri eksiklerle değiştirir."""
+        all_ids = {dlv.id for dlv in self.deliveries}
+        used, duplicates = set(), []
+        for lst in chrom.values():
+            for rid in lst:
+                (duplicates if rid in used else used).append(rid) if rid in used else used.add(rid)
+
+        missing = list(all_ids - used)
+        self.rand.shuffle(missing)
+
+        for lst in chrom.values():
+            for i, rid in enumerate(lst):
+                if rid in duplicates:
+                    lst[i] = missing.pop() if missing else rid
+                    duplicates.remove(rid)
+
+
+
+    # --- fitness -----------------------------------------------------------------
+def fitness(self, chrom) -> float:
+    score = 0.0
+    for d in self.drones:
+        route_ids = chrom[d.id]
+        route = [next(x for x in self.deliveries if x.id == rid) for rid in route_ids]
+
+        ok, bat_left = check_route(d, route)
+        if not ok:
+            score -= 1_000_000        # ağır ceza, rota geçersiz
+            continue
+
+        # 1) Teslimat sayısı ödülü
+        score += len(route) * DELIVERY_REWARD
+
+        # 2) Enerji tüketimi cezası (başlangıç - kalan)
+        energy_used = d.battery_capacity - bat_left
+        score -= energy_used * ENERGY_WEIGHT
+
+        # 3) Geç kalma cezası  (basit: varış zamanı - deadline)
+        current_pos = d.start_pos
+        current_time = 8 * 60        # 08:00 dakikada
+        late_penalty = 0
+
+        for task in route:
+            # mesafe → süre (dk)
+            dist = haversine(current_pos, task.pos)
+            current_time += dist / d.speed / 60
+            deadline = int(task.time_window[1][:2]) * 60 + int(task.time_window[1][3:])
+            if current_time > deadline:
+                late_penalty += (current_time - deadline) * LATE_PENALTY_MIN
+            current_pos = task.pos
+
+        score -= late_penalty
+    return score
 
 # ------------- hızlı test -------------
 if __name__ == "__main__":
